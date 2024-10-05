@@ -1,0 +1,1209 @@
+---
+title: "Prediction of loan defaults"
+author: "Naga Chaitanya Paladugu"
+date: "2024-07-15"
+output: html_document
+---
+
+# Introduction
+
+## I1: Source of Dataset
+
+The source of my dataset is the UCI Machine Learning Repository.
+
+Link: [UCI Machine Learning Repository - Default of Credit Card Clients Dataset](https://archive.ics.uci.edu/ml/datasets/default+of+credit+card+clients)
+
+## I2: Context
+
+In 2005, Taiwan faced a consumer financial crisis, known as the double-card crisis, due to overwhelming debt from credit and cash cards. More than half a million cardholders, according to "The Taiwan Credit Card Crisis - Financial Ethics" (2011), were unable to repay their debts, leading to social issues and increased crime rates. Financial institutions experienced sharp rises in overdue and default rates, with some nearly going bankrupt. This crisis also slowed consumer spending and economic growth. The government had to intervene with financial aid and regulatory reforms to stabilize the economy and prevent further damage.
+
+Using this case study, I will build a machine learning model to predict credit card loan defaults for the month of October 2005 using demographic and past payment behavior. The model will employ a Bayesian approach to fit a logistic regression, aiming to identify potential defaulters and improve credit risk management.
+
+## Objective
+
+Straight to the point, our goal is to predict whether or not a customer defaults (*Yes* or *No*) on their loan repayment for the month of October 2005, indicated by '*default payment next month*,' using various demographic and payment behavior of past six months as feature variables. [Considering the high default rates in the country, our main focus is to effectively predict potential defaulters rather than aiming for overall accuracy.]{.underline}
+
+## I3: Permission Requirements
+
+I have permission to share the dataset and its analysis, as the dataset is publicly available from the UCI Machine Learning Repository for research and educational purposes. Appropriate credit is given to the UCI Machine Learning Repository by citing it in this report.
+
+## I4: Compilation
+
+I compiled the dataset by downloading it from the UCI Machine Learning Repository, renaming it to "*UCI_CreditCard.xlsx*" for local use, and preprocessing it to ensure consistency and accuracy. This included handling missing values, adjusting variable classes, renaming variables, creating new features, and transforming variables as needed for the analysis.
+
+## I5: Dataset Description
+
+The dataset includes 30,000 observations and 25 variables. Key variables include:
+
+-   Demographic Details: Age, gender, marital status, education level.
+
+-   Past Payment Behavior: Payment history, bill amounts, previous default status.
+
+-   Target Variable: 'Default payment next month,' indicating whether a client defaulted on their loan repayment in October 2005.
+
+| Variable              | Description                                                                                                                       | Class   | Role        |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------|---------|-------------|
+| ID                    | Unique identifier for each client (original, not used in analysis).                                                               | Factor  | Dropped     |
+| Credit_Limit          | The client's credit limit (original).                                                                                             | Numeric | Predictor   |
+| Gender                | Gender of the client (original, 1 = male, 2 = female).                                                                            | Factor  | Predictor   |
+| Edu_Level             | Education level of the client (original, 1 = graduate school, 2 = university, 3 = high school, 4 = others).                       | Factor  | Predictor   |
+| Marital_Status        | Marital status of the client (original, 1 = married, 2 = single, 3 = others).                                                     | Factor  | Predictor   |
+| Age                   | Age of the client (original, numerical).                                                                                          | Numeric | Predictor   |
+| ---------             | Repayment status from Sept to April(original, 0= paid duly, -1= payment one month delay, 2= payment two month delay, and so on).  |         | ----------- |
+| Pay_Status_Sept       | Repayment status in September                                                                                                     | Factor  | Predictor   |
+| Pay_Status_Aug        | Repayment status in August                                                                                                        | Factor  | Predictor   |
+| Pay_Status_July       | Repayment status in July                                                                                                          | Factor  | Predictor   |
+| Pay_Status_June       | Repayment status in June                                                                                                          | Factor  | Predictor   |
+| Pay_Status_May        | Repayment status in May                                                                                                           | Factor  | Predictor   |
+| Pay_Status_April      | Repayment status in April                                                                                                         | Factor  | Predictor   |
+| Bill_Amt_Sept         | Amount billed in September (original, numerical).                                                                                 | Numeric | Predictor   |
+| Bill_Amt_Aug          | Amount billed in August (original, numerical).                                                                                    | Numeric | Predictor   |
+| Bill_Amt_July         | Amount billed in July (original, numerical).                                                                                      | Numeric | Predictor   |
+| Bill_Amt_June         | Amount billed in June (original, numerical).                                                                                      | Numeric | Predictor   |
+| Bill_Amt_May          | Amount billed in May (original, numerical).                                                                                       | Numeric | Predictor   |
+| Bill_Amt_April        | Amount billed in April (original, numerical).                                                                                     | Numeric | Predictor   |
+| Pay_Amt_Sept          | Amount paid in September (original, numerical).                                                                                   | Numeric | Predictor   |
+| Pay_Amt_Aug           | Amount paid in August (original, numerical).                                                                                      | Numeric | Predictor   |
+| Pay_Amt_July          | Amount paid in July (original, numerical).                                                                                        | Numeric | Predictor   |
+| Pay_Amt_June          | Amount paid in June (original, numerical).                                                                                        | Numeric | Predictor   |
+| Pay_Amt_May           | Amount paid in May (original, numerical).                                                                                         | Numeric | Predictor   |
+| Pay_Amt_April         | Amount paid in April (original, numerical).                                                                                       | Numeric | Predictor   |
+| Default               | Whether the client defaulted (original, 0 = no, 1 = yes; transformed to factor: "No" or "Yes").                                   | Factor  | Output      |
+| Avg_Pay_Status        | Average repayment status across all months (new, computed as the mean of Pay_Status variables for six months from Sept to April). | Numeric | Predictor   |
+| Avg_Billed_Paid_Ratio | Average ratio of billed amounts to paid amounts (new, computed as the mean of Bill_Amt/Pay_Amt ratios for all months).            | Numeric | Predictor   |
+
+## I6: Research Questions
+
+1.  What are the key features that significantly predict whether a client will default on their credit card payments?
+
+2.  In predicting credit card default rates, which category---demographic factors or past payment behaviors---provides more significant insights or predictive power?
+
+# Bringing in the Dataset
+
+Let's bring it in and see the structure.
+
+```{r}
+# Set the working directory
+setwd("~/Simulation and Modelling/FinalProject")
+
+# List files in the directory to confirm dataset presence
+dir()
+
+# Load necessary library
+library(readxl)
+
+# Read the dataset
+taiwan_loan <- read_excel("UCI_CreditCard.xlsx.xls")
+
+# Display the structure of the dataset
+str(taiwan_loan)
+```
+
+It is clear from the dataset that the class of all variables is inappropriate, and the column names are mislabelled, with the appropriate ones coded in the 1st row of the table.
+
+# Data Cleaning
+
+```{r}
+# Extract the first row to use as the header
+header <- taiwan_loan[1, ]
+
+# Set the first row as the column names
+colnames(taiwan_loan) <- header
+
+# Remove the first row (variable names)
+taiwan_loan <- taiwan_loan[-1, ]
+
+# Display the structure of the dataset
+str(taiwan_loan)
+```
+
+We shall better rename the variables to more meaningful names, change the variables into appropriate class, drop the unnecessary ID column, and verify the changes to ensure the dataset is properly structured for further analysis.
+
+```{r}
+# Load necessary library
+library(dplyr)
+
+# Rename variables and convert to appropriate classes
+taiwan_loan <- taiwan_loan %>%
+  rename(
+    Credit_Limit = LIMIT_BAL,
+    Gender = SEX,
+    Edu_Level = EDUCATION,
+    Marital_Status = MARRIAGE,
+    Age = AGE,
+    Pay_Status_Sept = PAY_0,
+    Pay_Status_Aug = PAY_2,
+    Pay_Status_July = PAY_3,
+    Pay_Status_June = PAY_4,
+    Pay_Status_May = PAY_5,
+    Pay_Status_April = PAY_6,
+    Bill_Amt_Sept = BILL_AMT1,
+    Bill_Amt_Aug = BILL_AMT2,
+    Bill_Amt_July = BILL_AMT3,
+    Bill_Amt_June = BILL_AMT4,
+    Bill_Amt_May = BILL_AMT5,
+    Bill_Amt_April = BILL_AMT6,
+    Pay_Amt_Sept = PAY_AMT1,
+    Pay_Amt_Aug = PAY_AMT2,
+    Pay_Amt_July = PAY_AMT3,
+    Pay_Amt_June = PAY_AMT4,
+    Pay_Amt_May = PAY_AMT5,
+    Pay_Amt_April = PAY_AMT6,
+    Default = "default payment next month"
+  ) %>%
+  select(-ID) %>%
+  mutate(
+    Credit_Limit= as.numeric(Credit_Limit),
+    Gender = as.factor(Gender),
+    Edu_Level = as.factor(Edu_Level),
+    Marital_Status = as.factor(Marital_Status),
+    Age = as.numeric(Age),
+    Pay_Status_Sept = as.factor(Pay_Status_Sept),
+    Pay_Status_Aug = as.factor(Pay_Status_Aug),
+    Pay_Status_July = as.factor(Pay_Status_July),
+    Pay_Status_June = as.factor(Pay_Status_June),
+    Pay_Status_May = as.factor(Pay_Status_May),
+    Pay_Status_April = as.factor(Pay_Status_April),
+    Bill_Amt_Sept = as.numeric(Bill_Amt_Sept),
+    Bill_Amt_Aug = as.numeric(Bill_Amt_Aug),
+    Bill_Amt_July = as.numeric(Bill_Amt_July),
+    Bill_Amt_June = as.numeric(Bill_Amt_June),
+    Bill_Amt_May = as.numeric(Bill_Amt_May),
+    Bill_Amt_April = as.numeric(Bill_Amt_April),
+    Pay_Amt_Sept = as.numeric(Pay_Amt_Sept),
+    Pay_Amt_Aug = as.numeric(Pay_Amt_Aug),
+    Pay_Amt_July = as.numeric(Pay_Amt_July),
+    Pay_Amt_June = as.numeric(Pay_Amt_June),
+    Pay_Amt_May = as.numeric(Pay_Amt_May),
+    Pay_Amt_April = as.numeric(Pay_Amt_April),
+    Default = as.factor(Default)
+  )
+
+# Verify the changes
+str(taiwan_loan)
+```
+
+Let's check for any missing data.
+
+```{r}
+# Check for NA values
+colSums(is.na(taiwan_loan))
+```
+
+With the absence of null values and the sufficiently clean enough dataset in hand, we can proceed with the Exploratory Data Analysis (EDA).
+
+# EDA and Transformation
+
+## Dependent Variables
+
+### Categorical
+
+#### Gender
+
+Let's explore the *Gender* variable to understand its distribution and relationship with the default status. From the information we have, Gender: 1 = male; 2 = female.
+
+```{r}
+#Gender
+table(taiwan_loan$Gender)
+```
+
+```{r}
+# Gender: 1 = male; 2 = female
+gender_counts <- table(taiwan_loan$Gender)
+gender_percentages <- gender_counts / sum(gender_counts) * 100
+
+# Create a bar plot for Gender distribution
+barplot(gender_percentages, 
+        main = "Gender Distribution",
+        xlab = "Gender",
+        ylab = "Percentage",
+        col = c("lightblue", "lightpink"),
+        names.arg = c("Male", "Female"),
+        ylim = c(0, 100),
+        beside = TRUE
+)
+
+# Add percentage labels on the bars
+text(x = barplot(gender_percentages, plot = FALSE) + 0.05, 
+     y = gender_percentages + 2, 
+     labels = paste0(round(gender_percentages, 1), "%"),
+     col = "black", pos = 3)
+```
+
+Let's see the how the default rates are for each gender category.
+
+```{r}
+# Assuming gender_default_table and gender_default_percentages are already calculated
+gender_default_table <- table(taiwan_loan$Gender, taiwan_loan$Default)
+gender_default_percentages <- prop.table(gender_default_table, 1) * 100
+
+# Create a data frame with gender and default status percentages
+df <- data.frame(
+  Gender = rep(c("Male", "Female"), each = 2),
+  Status = rep(c("Not_Default", "Default"), 2),
+  Percentage = c(gender_default_percentages[1, ], gender_default_percentages[2, ])
+)
+
+# Create the bar plot using ggplot2
+library(ggplot2)
+ggplot(df, aes(x = Gender, y = Percentage, fill = Status)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Gender vs Default Status",
+       x = "Gender",
+       y = "Percentage") +
+  scale_fill_manual(values = c("salmon", "lightblue")) +
+  theme_minimal()
+
+```
+
+It is clear that although the dataset contains more females taking the credit card loan than males, the default rates are higher in proportion for males than for females.
+
+Although, this suggests us that gender might be an important predictor for default risk, it is essential to be cautious as relying solely on gender for predictions could introduce bias. Therefore, we shall consider other factors and ensure that the model does not unfairly discriminate against any group.
+
+#### Education
+
+Let's explore the *Edu_Level* variable to understand its distribution and relationship with the default status.
+
+```{r}
+# Check unique values in Education Level
+table(taiwan_loan$Edu_Level)
+```
+
+From the information, *Edu_Level* is coded as: (1 = graduate school; 2 = university; 3 = high school; 4 = others). However, there are classes like 0, 5 and 6 coded into our dataset. Let's add these *unknown* classes to the "*others*" category as their count is small and would not affect our analysis significantly. Here *others* class could mean education less than high school or something which we are unsure.
+
+```{r}
+# Category reduction for Education Level
+taiwan_loan$Edu_Level <- ifelse(as.character(taiwan_loan$Edu_Level) %in% c("0", "5", "6"), "4", as.character(taiwan_loan$Edu_Level))
+
+# Convert back to factor
+taiwan_loan$Edu_Level <- as.factor(taiwan_loan$Edu_Level)
+
+# Verify changes
+table(taiwan_loan$Edu_Level)
+```
+
+Let's see how default rates are distributed for the level of education.
+
+```{r}
+# Create a table for Education Level
+edu_level_counts <- table(taiwan_loan$Edu_Level)
+
+# Create a data frame for plotting
+edu_count_df <- data.frame(
+  Edu_Level = c("Graduate School", "University", "High School", "Others"),
+  Count = as.vector(edu_level_counts)
+)
+
+# Create the bar plot using ggplot2
+library(ggplot2)
+ggplot(edu_count_df, aes(x = Edu_Level, y = Count, fill = Edu_Level)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Count of Education Levels",
+       x = "Education Level",
+       y = "Count") +
+  scale_fill_manual(values = c("lightblue", "lightgreen", "lightcoral", "lightskyblue")) +
+  theme_minimal()
+
+# Create a table for Education Level and Default status
+education_default_table <- table(taiwan_loan$Edu_Level, taiwan_loan$Default)
+education_default_percentages <- prop.table(education_default_table, 1) * 100
+
+# Create a data frame with education level and default status percentages
+edu_df <- data.frame(
+  Edu_Level = rep(c("Graduate School", "University", "High School", "Others"), each = 2),
+  Status = rep(c("Not_Default", "Default"), 4),
+  Percentage = c(education_default_percentages[1, ], education_default_percentages[2, ], education_default_percentages[3, ], education_default_percentages[4, ])
+)
+
+# Create the bar plot using ggplot2
+library(ggplot2)
+ggplot(edu_df, aes(x = Edu_Level, y = Percentage, fill = Status)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Education Level vs Default Status",
+       x = "Education Level",
+       y = "Percentage") +
+  scale_fill_manual(values = c("salmon", "lightblue")) +
+  theme_minimal()
+```
+
+The default rates appear to align with the expectation that the more educated a person is, the more financially capable they are of making timely repayments. Excluding the "*Others*" category, whose specifics are unclear, the default rates are lowest among *Graduates* and highest among *high school* passouts within the three main categories.\
+\
+Overall, it is plausible that the education level of a person could be used for prediction.
+
+#### Marital Status
+
+Let's check the distribution of the *Marital_Status* variable and visualize it.
+
+```{r}
+# Check unique values in Marital Status
+table(taiwan_loan$Marital_Status)
+```
+
+From our information: Marital status (1 = married; 2 = single; 3 = others). Let's add the class 0 to 3 as their count (54) is small and would not affect the analysis much.
+
+```{r}
+# Category reduction for Marital Status
+taiwan_loan$Marital_Status <- ifelse(as.character(taiwan_loan$Marital_Status) == "0", "3", as.character(taiwan_loan$Marital_Status))
+
+# Convert back to factor
+taiwan_loan$Marital_Status <- as.factor(taiwan_loan$Marital_Status)
+
+# Verify changes
+table(taiwan_loan$Marital_Status)
+```
+
+It is time to view their distributions.
+
+```{r}
+# Create a table for Marital Status
+marital_status_counts <- table(taiwan_loan$Marital_Status)
+
+# Create a data frame for plotting
+marital_status_df <- data.frame(
+  Marital_Status = c("Married", "Single", "Others"),
+  Count = as.vector(marital_status_counts)
+)
+
+# Create the bar plot using ggplot2
+library(ggplot2)
+ggplot(marital_status_df, aes(x = Marital_Status, y = Count, fill = Marital_Status)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Count of Marital Status",
+       x = "Marital Status",
+       y = "Count") +
+  scale_fill_manual(values = c("lightblue", "lightgreen", "lightcoral")) +
+  theme_minimal()
+
+# Create a table for Marital Status and Default status
+marital_default_table <- table(taiwan_loan$Marital_Status, taiwan_loan$Default)
+marital_default_percentages <- prop.table(marital_default_table, 1) * 100
+
+# Create a data frame with marital status and default status percentages
+marital_df <- data.frame(
+  Marital_Status = rep(c("Married", "Single", "Others"), each = 2),
+  Status = rep(c("Not_Default", "Default"), 3),
+  Percentage = c(marital_default_percentages[1, ], marital_default_percentages[2, ], marital_default_percentages[3, ])
+)
+
+# Create the bar plot using ggplot2
+ggplot(marital_df, aes(x = Marital_Status, y = Percentage, fill = Status)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Marital Status vs Default Status",
+       x = "Marital Status",
+       y = "Percentage") +
+  scale_fill_manual(values = c("salmon", "lightblue")) +
+  theme_minimal()
+```
+
+There is not a big difference between the number of married people and single people who took a loan, with singles slightly higher in number. This similarity extends to the proportion of default rates, but default rates are slightly higher among married individuals than singles. Although we don't exactly know what the "Others" category mean (it could include divorced or never married individuals), there is still a significant proportion of defaults in that class as well.
+
+### Numerical
+
+#### Credit Limit
+
+Let's explore the *Credit_Limit* variable to understand its distribution and relationship with the default status.
+
+```{r}
+# Create a histogram for Credit Limit
+library(ggplot2)
+ggplot(taiwan_loan, aes(x = Credit_Limit)) +
+  geom_histogram(binwidth = 50000, fill = "lightblue", color = "black") +
+  labs(title = "Distribution of Credit Limit",
+       x = "Credit Limit",
+       y = "Count") +
+  theme_minimal()
+```
+
+The distribution of credit limits shows that most customers have credit limits concentrated in the range of 0-250K NTD.
+
+Let's examine the relationship between credit limit and default status.
+
+```{r}
+# Create a box plot to visualize the relationship between Credit Limit and Default status
+ggplot(taiwan_loan, aes(x = Default, y = Credit_Limit, fill = Default)) +
+  geom_boxplot() +
+  labs(title = "Credit Limit vs Default Status",
+       x = "Default Status",
+       y = "Credit Limit") +
+  scale_fill_manual(values = c("lightblue", "salmon")) +
+  theme_minimal()
+```
+
+At first glance, we might think there are outliers with a credit limit of more than 500k NT. However, they could also be high net worth individuals. They are very few in number, which might not affect our analysis much.
+
+#### Age
+
+Let's see how the age of loan holders is distrbuted.
+
+```{r}
+# Distribution Plot
+ggplot(taiwan_loan, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black") +
+  labs(title = "Distribution of Age",
+       x = "Age",
+       y = "Count") +
+  theme_minimal()
+
+# Box plot of Age by Default Status
+ggplot(taiwan_loan, aes(x = Default, y = Age, fill = Default)) +
+  geom_boxplot() +
+  labs(title = "Age Distribution by Default Status",
+       x = "Default Status",
+       y = "Age") +
+  scale_fill_manual(values = c("lightblue", "salmon")) +
+  theme_minimal()
+
+# Density plot of Age by Default Status
+ggplot(taiwan_loan, aes(x = Age, fill = Default)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of Age by Default Status",
+       x = "Age",
+       y = "Density") +
+  scale_fill_manual(values = c("lightblue", "salmon")) +
+  theme_minimal()
+
+```
+
+The distribution of *Age* among loan holders is right-skewed, a common characteristic for age-related attributes. The age of loan holders ranges from 0 to 80 years, with no significant outliers. A significant proportion of loan holders fall within the 25-40 years age group, indicating that this is the primary demographic availing credit card loans and very few people in higher age groups (60+) which is quite normal. Lastly, the defaulters and non-defaulters have almost similar distributions.
+
+#### Billed to Paid Ratio
+
+To effectively capture the payment behavior of customers, we calculate the ratio of billed amounts to paid amounts for each month. Additionally, we compute the average of these ratios to create a single aggregate feature (*Avg_Billed_Paid_Ratio*). Using this aggregate variable instead of individual variables for billed and paid amounts simplifies the model by reducing dimensionality, as opposed to including ten individual variables (five billed amounts and five paid amounts). This approach maintains model simplicity without losing significant information *(Graff, 2023)*, allowing us to better understand how well customers manage their credit and make timely payments.
+
+```{r}
+# Create Billed_Paid_Ratios
+taiwan_loan <- taiwan_loan %>%
+  mutate(
+    Billed_Paid_Ratio_Sept = ifelse(Pay_Amt_Sept == 0, 0, Bill_Amt_Sept / Pay_Amt_Sept),
+    Billed_Paid_Ratio_Aug = ifelse(Pay_Amt_Aug == 0, 0, Bill_Amt_Aug / Pay_Amt_Aug),
+    Billed_Paid_Ratio_July = ifelse(Pay_Amt_July == 0, 0, Bill_Amt_July / Pay_Amt_July),
+    Billed_Paid_Ratio_June = ifelse(Pay_Amt_June == 0, 0, Bill_Amt_June / Pay_Amt_June),
+    Billed_Paid_Ratio_May = ifelse(Pay_Amt_May == 0, 0, Bill_Amt_May / Pay_Amt_May),
+    Billed_Paid_Ratio_April = ifelse(Pay_Amt_April == 0, 0, Bill_Amt_April / Pay_Amt_April)
+  ) %>%
+  mutate(
+    Avg_Billed_Paid_Ratio = rowMeans(select(., Billed_Paid_Ratio_Sept, Billed_Paid_Ratio_Aug, Billed_Paid_Ratio_July, Billed_Paid_Ratio_June, Billed_Paid_Ratio_May, Billed_Paid_Ratio_April))
+  )
+```
+
+#### Repayment Status
+
+The repayment status for past 6 months from April 2005 to September 2005 could add value to our prediction.
+
+```{r}
+table(taiwan_loan$Pay_Status_Sept)
+table(taiwan_loan$Pay_Status_Aug)
+table(taiwan_loan$Pay_Status_July)
+table(taiwan_loan$Pay_Status_June)
+table(taiwan_loan$Pay_Status_May)
+table(taiwan_loan$Pay_Status_April)
+```
+
+From the available information: -1= paid duly, 1= payment one month delay, 2= payment 2 month delay,and so on. But the dataset seems to -2, 0 classes. We can possibly consider 0 and -2 as 'paid duly'. Based on that seemingly possible assumption, we can modify -2,-1 observations to 0 making our average aggregate computations easier.
+
+Also, just like I said for the previous variable, as said by *Graff (2023)*, to reduce dimensionality, reducing model simplicity, and at the same time retaining a similar feature influence, let's calculate an aggregate average measure for all these months combined. But, we need to remember that a scrutinized interpretation of this average aggregate is not possible as we have converted factors representing number of months a payment is delayed into numerics for prediction purposes.
+
+```{r}
+# Convert Pay_Status variables to numeric, replacing -1 and -2 with 0
+taiwan_loan <- taiwan_loan %>%
+  mutate(
+    Pay_Status_Sept = as.numeric(replace(as.character(Pay_Status_Sept), Pay_Status_Sept %in% c("-1", "-2"), "0")),
+    Pay_Status_Aug = as.numeric(replace(as.character(Pay_Status_Aug), Pay_Status_Aug %in% c("-1", "-2"), "0")),
+    Pay_Status_July = as.numeric(replace(as.character(Pay_Status_July), Pay_Status_July %in% c("-1", "-2"), "0")),
+    Pay_Status_June = as.numeric(replace(as.character(Pay_Status_June), Pay_Status_June %in% c("-1", "-2"), "0")),
+    Pay_Status_May = as.numeric(replace(as.character(Pay_Status_May), Pay_Status_May %in% c("-1", "-2"), "0")),
+    Pay_Status_April = as.numeric(replace(as.character(Pay_Status_April), Pay_Status_April %in% c("-1", "-2"), "0"))
+  )
+
+# Verify changes
+table(taiwan_loan$Pay_Status_Sept)
+table(taiwan_loan$Pay_Status_Aug)
+table(taiwan_loan$Pay_Status_July)
+table(taiwan_loan$Pay_Status_June)
+table(taiwan_loan$Pay_Status_May)
+table(taiwan_loan$Pay_Status_April)
+
+# Aggregate average measure of repayment status across 6 months
+taiwan_loan <- taiwan_loan %>%
+  mutate(Avg_Pay_Status = rowMeans(select(., Pay_Status_Sept, Pay_Status_Aug, Pay_Status_July, Pay_Status_June, Pay_Status_May, Pay_Status_April)))
+
+# Verify the new aggregated feature
+summary(taiwan_loan$Avg_Pay_Status)
+
+# Convert Pay_Status variables back to factors
+taiwan_loan <- taiwan_loan %>%
+  mutate(
+    Pay_Status_Sept = as.factor(Pay_Status_Sept),
+    Pay_Status_Aug = as.factor(Pay_Status_Aug),
+    Pay_Status_July = as.factor(Pay_Status_July),
+    Pay_Status_June = as.factor(Pay_Status_June),
+    Pay_Status_May = as.factor(Pay_Status_May),
+    Pay_Status_April = as.factor(Pay_Status_April)
+  )
+```
+
+## Independent Variable
+
+### Default
+
+Let's see how the target variable (*Default*) is distributed with visualizations to get a quick overview.
+
+```{r}
+# Calculate percentages of default and non-default
+default_counts <- table(taiwan_loan$Default)
+default_percentages <- default_counts / sum(default_counts) * 100
+
+# Create a bar plot
+barplot(default_percentages, 
+        main = "Percentage Distribution of Default Status",
+        xlab = "Default Status",
+        ylab = "Percentage",
+        col = c("skyblue", "salmon"),
+        names.arg = c("Not Default", "Default"),
+        ylim = c(0, 100),
+        beside = TRUE,
+        legend.text = TRUE,
+        args.legend = list(title = "Default")
+)
+
+# Add percentage labels on the bars
+text(x = barplot(default_percentages, plot = FALSE) + 0.05, 
+     y = default_percentages + 2, 
+     labels = paste0(round(default_percentages, 1), "%"),
+     col = "black", pos = 3)
+
+```
+
+There are significantly more number of non-defaulters than the defaulters in the dataset.
+
+# Addressing Class Imbalance
+
+Now it is time to address a crucial part of the analysis. There is a significant imbalance between defaulters and non-defaulters in the dataset, with an approximate 20-80 split, respectively. If we build the model with this imbalanced distribution, it will likely be biased towards classifying more non-defaulters and fewer defaulters than actually present *(How Can You Balance Class Imbalance in an ML Model?, 2023)*. Given our main intention to predict potential defaulters, this poses a significant problem.
+
+To mitigate this issue, I will adjust the imbalance from 20-80 to 40-60 split. This distribution will allow the model to learn the underlying patterns of defaulters more effectively while still maintaining the real-world relevance of defaulters always being fewer than non-defaulters. Although a 50-50 split might seem like a good idea, having an equal number of defaulters and non-defaulters is a very rare phenomenon, which does not align with our scenario.
+
+```{r}
+# Set seed for reproducibility
+set.seed(84735)
+
+# Calculate the number of samples needed from each class
+n_majority <- sum(taiwan_loan$Default == 0)
+n_minority <- sum(taiwan_loan$Default == 1)
+
+# Desired balance (e.g., 40% defaults)
+desired_minority_proportion <- 0.4
+
+# Calculate the desired number of majority class instances
+desired_majority_count <- round(n_minority * (1 - desired_minority_proportion) / desired_minority_proportion)
+
+# Ensure we do not exceed the available majority samples
+desired_majority_count <- min(desired_majority_count, n_majority)
+
+# Sample from the majority class
+majority_sample <- taiwan_loan %>%
+  filter(Default == 0) %>%
+  sample_n(size = desired_majority_count, replace = FALSE)
+
+# Combine the majority sample with all minority instances
+balanced_dataset <- bind_rows(majority_sample, taiwan_loan %>% filter(Default == 1))
+
+# Check the distribution of 'Default' variable in the balanced dataset
+prop.table(table(balanced_dataset$Default))
+```
+
+The balancing of 20-80 split of non-defaulters and defaulters to an extent to 40-60 split is achieved.
+
+# Final Dataset for modelling
+
+We are just a step away from model building. Before that we need to prepare the final dataset required for model building. On a first attempt, I am just going to throw in all the available predictors into the model and so modifying the dataset accordingly and checking for the variable class.
+
+```{r}
+# Final Dataset Preparation
+model_data <- balanced_dataset %>%
+  select(Credit_Limit, Marital_Status, 
+         Edu_Level, Gender, Age, 
+         Avg_Pay_Status, Avg_Billed_Paid_Ratio, Default) %>% 
+  mutate(Default = factor(ifelse(Default == 0, "No", "Yes")))  # Convert Default to "No" and "Yes"
+
+#structure of dataset
+str(model_data)
+```
+
+Considering the huge size with about 30K observations, we randomly sample 4,000 rows from the prepared dataset to create a manageable subset for model training.
+
+```{r}
+# Set seed for reproducibility
+set.seed(84735)
+
+# Sample 6,000 rows from the original dataset
+loan_sample <- model_data %>% sample_n(4000)
+```
+
+We need to check if this sample sufficiently represents the true population (original dataset).
+
+```{r}
+# Compare Default variable distribution
+original_default_dist <- prop.table(table(model_data$Default))
+sample_default_dist <- prop.table(table(loan_sample$Default))
+
+# Print Default variable distributions
+print("Original Default Distribution:")
+print(original_default_dist)
+print("Sampled Default Distribution:")
+print(sample_default_dist)
+
+# Compare distributions of other key variables using ggplot2
+# Function to plot distributions for comparison
+plot_distribution <- function(original, sample, variable) {
+  original_df <- data.frame(Value = original, Type = "Original")
+  sample_df <- data.frame(Value = sample, Type = "Sample")
+  combined_df <- rbind(original_df, sample_df)
+  
+  ggplot(combined_df, aes(x = Value, fill = Type)) +
+    geom_histogram(position = "dodge", bins = 30) +
+    labs(title = paste("Distribution of", variable), x = variable, y = "Count") +
+    theme_minimal()
+}
+
+# Plot distributions for comparison
+plot_distribution(model_data$Credit_Limit, loan_sample$Credit_Limit, "Credit_Limit")
+plot_distribution(model_data$Avg_Pay_Status, loan_sample$Avg_Pay_Status, "Avg_Pay_Status")
+plot_distribution(model_data$Age, loan_sample$Age, "Age")
+
+# Compare categorical variables distributions
+original_marital_status_dist <- prop.table(table(model_data$Marital_Status))
+sample_marital_status_dist <- prop.table(table(loan_sample$Marital_Status))
+
+original_edu_level_dist <- prop.table(table(model_data$Edu_Level))
+sample_edu_level_dist <- prop.table(table(loan_sample$Edu_Level))
+
+original_gender_dist <- prop.table(table(model_data$Gender))
+sample_gender_dist <- prop.table(table(loan_sample$Gender))
+
+# Print categorical variable distributions
+print("Original Marital Status Distribution:")
+print(original_marital_status_dist)
+print("Sampled Marital Status Distribution:")
+print(sample_marital_status_dist)
+
+print("Original Education Level Distribution:")
+print(original_edu_level_dist)
+print("Sampled Education Level Distribution:")
+print(sample_edu_level_dist)
+
+print("Original Gender Distribution:")
+print(original_gender_dist)
+print("Sampled Gender Distribution:")
+print(sample_gender_dist)
+
+```
+
+Thanks to the 'Random Sampling' technique and the 'Law of Large Numbers,' these results indicate that the random sampling process has successfully maintained the original dataset's distributions and proportions. This is a good indication that our sample is representative of the original dataset, and we can confidently proceed with building our Bayesian logistic regression model to predict credit card defaulters in a hope of possibly saving Taiwan slipping into a recession😆. The whole mission is now on our shoulders!
+
+# Conceptual Model
+
+## CM1: Specifying the Data Model
+
+Our target variable, $Y_i$, is a discrete variable indicating whether or not a person defaults, represented as a binary factor variable (0: No and 1: Yes). Thus, fitting a logistic regression using a Bernoulli probability model is appropriate for our analysis *(Johnson, Ott, & Dogucu, 2021)*. This is represented in the form of a data model as follows:
+
+**Data model**
+
+$$ 
+Y_i \mid \beta_0, \beta_1, \ldots, \beta_p \sim \text{Bernoulli}(\pi_i) \quad \text{with} \quad \log\left(\frac{\pi_i}{1 - \pi_i}\right) = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \ldots + \beta_p X_{ip}
+$$
+
+**Priors**
+
+$$
+\beta_0 \sim N(m_0, s_0^2)
+$$
+
+$$
+\beta_1 \sim N(m_1, s_1^2)
+$$
+
+$$
+\vdots
+$$
+
+$$
+\beta_p \sim N(m_p, s_p^2)
+$$
+
+$$
+\pi_i = \frac{e^{\beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \ldots + \beta_p X_{ip}}}{1 + e^{\beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \ldots + \beta_p X_{ip}}}
+$$
+
+## CM2: Specification of Priors
+
+Given the absence of specific prior beliefs or background information relevant to Taiwan credit card crisis situation in 2005, I opted for weakly (not very weakly) informative priors. These priors are characterized by a normal distribution with a mean of 0 and a standard deviation of 2.5. This choice reflects a neutral stance, assuming no effect (mean = 0) while allowing for a moderate spread of potential effects (standard deviation = 2.5). The intention behind selecting weakly informative priors, *Stan-Dev (n.d.)*, is to avoid strong assumptions about the data and to let our large amount of data (4K observations) itself strongly influence the model's outcomes. Additionally, the autoscaling feature adjusts the prior scales based on the dataset's characteristics, enhancing the model's adaptability and robustness.
+
+$$
+\beta_0 \sim \text{Normal}(0, 2.5^2)
+$$
+
+$$
+\beta_1 \sim \text{Normal}(0, 2.5^2)
+$$
+
+$$
+\beta_2 \sim \text{Normal}(0, 2.5^2)
+$$
+
+$$
+\vdots
+$$
+
+$$
+\beta_p \sim \text{Normal}(0, 2.5^2)
+$$
+
+## CM3: Hypothesis Specification
+
+**Credit Limit (**β1​)
+
+-   **Null Hypothesis (**H0​): βi=0
+
+-   **Rationale**: The null hypothesis assumes that the credit limit has no effect on the likelihood of defaulting. This is a conservative assumption indicating that without evidence, we assume no impact.
+
+**Average Payment Status (**β2​)
+
+-   **Null Hypothesis (**H0): βi=0
+
+-   **Rationale**: This assumes that the average repayment status does not influence the likelihood of default. This neutral stance reflects the assumption that, in the absence of evidence, payment behavior has no effect on default risk.
+
+**Average Billed-to-Paid Ratio (**β3​)
+
+-   **Null Hypothesis (**H0): βi=0
+
+-   **Rationale**: The null hypothesis posits that the ratio of billed amounts to paid amounts has no effect on default probability. This is a standard approach when no prior research strongly indicates an effect.
+
+**Marital Status (**β4​)
+
+-   **Null Hypothesis (**H0): βi=0
+
+-   **Rationale**: Assumes marital status does not affect the likelihood of defaulting. This neutral assumption is based on the absence of prior evidence suggesting a relationship.
+
+**Education Level (**β5​)
+
+-   **Null Hypothesis (**H0): βi=0
+
+-   **Rationale**: The null hypothesis assumes that education level has no effect on default probability. This conservative stance is taken due to lack of specific prior studies indicating a significant effect.
+
+**Gender (**β6​)
+
+-   **Null Hypothesis (**H0): βi=0
+
+-   **Rationale**: This assumes that gender has no impact on the likelihood of defaulting. This is a neutral assumption reflecting the absence of strong prior evidence which otherwise would lead to gender bias.
+
+**Age (**β7)
+
+-   **Null Hypothesis (**H0): βi=0
+
+-   **Rationale**: Assumes age does not influence the probability of default. This conservative stance is taken due to lack of specific prior studies indicating a significant effect.
+
+## CM4: Tuning priors
+
+To ensure that these priors are reasonable and to visualize their effects, we run the *stan_glm* with *prior_PD= TRUE*. This will generate samples from the prior predictive distribution, helping us assess if the priors are appropriately specified.\
+
+```{r}
+#Loading packages and data
+  
+library(bayesrules)
+library(rstanarm)
+library(bayesplot)
+library(tidybayes)
+library(tidyverse)
+library(broom.mixed)
+library(tidybayes)
+```
+
+```{r}
+# Fit the model with prior predictive checks
+credit_model_prior <- stan_glm(
+  Default ~ Credit_Limit + Avg_Pay_Status + Avg_Billed_Paid_Ratio + Marital_Status + Edu_Level + Gender + Age,
+  data = loan_sample,
+  family = binomial,
+  prior_intercept = normal(0, 2.5, autoscale = TRUE),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  chains = 4,
+  iter = 5000*2,
+  seed = 84735,
+  prior_PD = TRUE,  # Prior predictive checks
+)
+```
+
+```{r}
+# MCMC diagnostics
+      mcmc_trace(credit_model_prior)
+      mcmc_dens_overlay(credit_model_prior)
+      mcmc_acf(credit_model_prior)
+```
+
+The visual diagnostics indicate well-mixed chains with minimal autocorrelation evident across lags. Numerical summaries confirm high effective sample sizes (*n_eff* \> 10,000) and *Rhat* values close to 1.0, ensuring stable and reliable posterior estimates for all model parameters according to the notes document of Week 4 on Building Simple Normal Regression models (Link: <https://canvas.slu.edu/courses/55934/files/4756996?wrap=1>).
+
+```{r}
+prior_summary1 <- prior_summary(credit_model_prior)
+prior_summary1
+prior_summary1$prior$adjusted_scale
+
+```
+
+We observed that while some coefficients aligned closely with the specified priors of Normal(0, 2.5), several coefficients showed significant adjustments beyond this range. Notably, Marital_Status3 and Edu_Level_4 coefficients exhibited standard deviations (20+) far exceeding the initial 2.5 threshold. It is fine as we have set weakly informative priors on the lack of prior knowledge. This adjustment signifies greater uncertainty and potentially larger effects of these predictors on credit default probabilities, accommodating the observed data more flexibly than the originally specified prior.
+
+# Implementing the Model
+
+## IM1: Model 1
+
+Let's simulate the posterior model for all regression model parameters by doing an *update()* on the *credit_model_prior* simulation in light of this new *loan_sample* data.
+
+```{r}
+# Simulate the model
+credit_model_1 <- update(credit_model_prior, prior_PD= FALSE)
+```
+
+## IM2: MCMC Evaluation
+
+```{r}
+# MCMC diagnostics
+      mcmc_trace(credit_model_1)
+      mcmc_dens_overlay(credit_model_1)
+      mcmc_acf(credit_model_1)
+      neff_ratio(credit_model_1)
+      rhat(credit_model_1)
+      
+      # Summary of the model
+      summary(credit_model_1)
+```
+
+The graphs indicate a stable MCMC-simulated posterior PDF. The trace plots show the chains intermingle without any systematic patterns, suggesting good mixing. The density plots reveal that the posterior density estimates for each parameter overlap significantly across the chains, indicating consistency according to *Mudigonda (2024)*. The autocorrelation plots demonstrate that the autocorrelation within each chain is close to zero, reflecting efficient sampling. These observations collectively suggest that the posterior PDF estimates are stable. The numerical summaries reinforce this conclusion, with all of the effective sample sizes (*n_eff*) being more than 10,000, and *Rhat* values mostly close to 1.00, indicating sufficient sampling and lack of autocorrelation according to the notes document of Week 4 on Building Simple Normal Regression models (Link: <https://canvas.slu.edu/courses/55934/files/4756996?wrap=1>).
+
+Let's see the summaries of these coefficients.
+
+```{r}
+# summary with confidence intervals
+tidy(credit_model_1, conf.int = TRUE, conf.level = 0.9999)
+```
+
+## IM3: Hypothesis Checking
+
+Let's interpret the above posterior model PDF's and see which of the coefficients are significant using the reference from *Mudigonda (2024)* on Multivariate Normal Models.
+
+1.  The ***Credit_Limit*** coefficient indicates a negative relationship, suggesting that for every small increase in credit limit, the log(odds of default) decreases by approximately 1.413554e-06 units. The 99.99% confidence interval (-2.391155e-06, -5.058418e-07) confirms this effect, as it does not include zero, indicating statistical significance.
+
+2.  A unit increase in ***Avg_Pay_Status*** corresponds to an increase of approximately 1.51 in the log(odds of default). The 99.99% confidence interval (1.27, 1.75) supports this positive relationship, indicating statistical significance.
+
+3.   While the coefficient of -6.592670e-06 suggests a very small decrease in the log(odds of default) for every unit increase in the ***Avg_Billed_Paid_Ratio***, the confidence interval suggests that this effect is not statistically significant as it includes zero in its range.
+
+4.  The coefficient for ***Marital_Status2*** suggests that, holding all other variables constant, being *Single* (compared to being *Married*, the reference category) is associated with a decrease in the log-odds of default by approximately 0.24. The confidence interval, which spans from about -0.49 to 0.008, indicates that this effect is not statistically significant at the 99.99% confidence level.
+
+5.  The coefficient ***Marital_Status3*** suggests that, holding all other variables constant, being in *Others* category which we don't know what it actually mean (compared to the *Married*) shows a coefficient of -0.14, suggesting a slight decrease in the log-odds of default, although this effect is not statistically significant as the confidence interval spans from -1.24 to 0.78.
+
+6.  The coefficient for ***Edu_Level2*** (*University*) suggests a slight increase of approximately 0.12 in the log-odds of default compared to the reference category (*Graduate* School). ***Edu_Level3*** (High School) shows a coefficient of about 0.06, indicating a similar small increase in default log-odds. However, both coefficients have wide confidence intervals (-0.14 to 0.37 for Level 2 and -0.27 to 0.42 for Level 3), indicating non-significance. Conversely, ***Edu_Level4*** (*Others*) shows a substantial decrease in the log-odds of default (-1.23), indicating a significant effect. However, being categorized as "*Others*" limits its utility in the model due to its broad definition and the wide confidence interval (-3.28 to -0.003) around the estimate.
+
+7.  The ***Gender2*** coefficient of -0.12 indicates a decrease in the log-odds of default for *females* (compared to *males*), but the confidence interval (-0.35 to 0.11) suggests that this difference is not statistically significant.
+
+8.  With a coefficient of about 0.001, ***Age*** shows a minimal increase in the log-odds of default per unit increase in *Age*. The confidence interval (-0.01 to 0.02) indicates non-significance, reflecting uncertainty in the effect size.
+
+**Overview**
+
+Overall, variables such as **Credit_Limit** and **Avg_Pay_Status** exhibit statistically significant effects, with their confidence intervals excluding zero as said by *Mudigonda (2024)*, suggesting a rejection of the null hypothesis ($H_0$) that these variables have no impact on the log-odds of default. Out of all, only $\beta_0$ and $\beta_1$ are signficant.
+
+Conversely, variables like **Avg_Billed_Paid_Ratio**, **Marital_Status2**, **Marital_Status3**, **Edu_Level2**, **Edu_Level3**, and **Gender2** show non-significant effects, as their confidence intervals include zero. Therefore, the null hypothesis ($H_0$) cannot be rejected for these variables, indicating that they may not significantly influence the log-odds of default based on the current model and data.
+
+Despite having rejected the null hypothesis ($H_0$) for **Edu_Level4** (*Others*) due to the significant effect with a substantial decrease in log-odds of default, it is limited by broad definition and the wide confidence interval, suggesting a caution to use it in the next model.
+
+#### Correlations- Numerical Features
+
+Having come all the way, we have noticed only two features to be significant among all. The significance of these two variables (*Credit_Limit* and *Avg_Pay_Status*) can also be quickly gleaned from correlations in a different approach. I have created a correlation matrix. It converts relevant columns to numeric, handles the *Default* variable as binary (0 and 1), and computes the correlation matrix using polyserial correlation for the binary target variable.
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(polycor)
+
+# Convert relevant columns to numeric, including Default
+taiwan_loan <- taiwan_loan %>%
+  mutate(across(c(Credit_Limit, Age, starts_with("Bill_Amt"), starts_with("Pay_Amt")), as.numeric)) %>%
+  mutate(Default = as.numeric(as.character(Default)))  # Convert Default from character to numeric
+
+# Select only numeric columns for the correlation matrix
+numeric_vars <- taiwan_loan %>%
+  select(Credit_Limit, Age, starts_with("Bill_Amt"), starts_with("Pay_Amt"))
+
+# Calculate the correlation matrix for numeric variables
+correlation_matrix <- cor(numeric_vars, use = "pairwise.complete.obs")
+
+# Calculate the polyserial correlation for Default with each numeric variable
+polyserial_corr <- sapply(numeric_vars, function(x) polyserial(x, taiwan_loan$Default))
+
+# Combine the polyserial correlations with the numeric correlation matrix
+correlation_matrix_with_default <- rbind(correlation_matrix, Default = polyserial_corr)
+correlation_matrix_with_default <- cbind(correlation_matrix_with_default, Default = c(polyserial_corr, 1))
+
+# Create a heatmap of the correlation matrix including the Default variable
+corrplot(correlation_matrix_with_default, method = "color", tl.col = "black", tl.cex = 0.8)
+
+# Convert Default back to factor
+taiwan_loan <- taiwan_loan %>%
+  mutate(Default = as.factor(Default))
+```
+
+From the correlation heatmap, it is clear that there are no strong correlations between the *Default* variable and any single numerical variable. This suggests that the likelihood of defaulting among loan holders cannot be solely determined by any single numerical variable alone but might require a combination of variables.
+
+From the above correlation heatmap, *Credit_Limit* has the higher correlation with the target variable (*Default*) than any other feature with a seemingly moderate to high strength.
+
+#### Correlations- Factor Features
+
+Let's see the correlations for categorical variables by performing a Chi-Square test and calculating Cramér's V with respect to a binary target variable "*Default*".
+
+```{r}
+# Load necessary libraries
+library(vcd)  # For Cramér's V
+
+# Define a function to perform Chi-Square Test and calculate Cramér's V
+analyze_categorical_correlation <- function(df, target_var, cat_var) {
+  # Create a contingency table
+  contingency_table <- table(df[[target_var]], df[[cat_var]])
+  
+  # Perform Chi-Square test
+  chi_square_test <- chisq.test(contingency_table)
+  
+  # Calculate Cramér's V
+  cramers_v <- assocstats(contingency_table)$cramer
+  
+  return(list(chi_square_test = chi_square_test, cramers_v = cramers_v))
+}
+
+# Example with Edu_Level, Marital_Status, and Pay_Status variables
+gender_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Gender")
+edu_level_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Edu_Level")
+marital_status_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Marital_Status")
+pay_status_sept_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Pay_Status_Sept")
+pay_status_aug_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Pay_Status_Aug")
+pay_status_july_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Pay_Status_July")
+pay_status_june_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Pay_Status_June")
+pay_status_may_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Pay_Status_May")
+pay_status_april_analysis <- analyze_categorical_correlation(taiwan_loan, "Default", "Pay_Status_April")
+
+# Print results
+
+print("Gender Analysis:")
+print(gender_analysis)
+
+print("Education Level Analysis:")
+print(edu_level_analysis)
+
+print("Marital Status Analysis:")
+print(marital_status_analysis)
+
+print("Pay Status September Analysis:")
+print(pay_status_sept_analysis)
+
+print("Pay Status August Analysis:")
+print(pay_status_aug_analysis)
+
+print("Pay Status July Analysis:")
+print(pay_status_july_analysis)
+
+print("Pay Status June Analysis:")
+print(pay_status_june_analysis)
+
+print("Pay Status May Analysis:")
+print(pay_status_may_analysis)
+
+print("Pay Status April Analysis:")
+print(pay_status_april_analysis)
+```
+
+It is clear that no other factor variable has good enough correlations with *Default* except the variables indicating repayment status with a moderate strength across all months.
+
+## IM4: Model 2
+
+Let's fit a new model just with the newly identified significant features *Credit_Limit* and *Avg_Repay_Status* to see how well model performs using only these two predictors.
+
+```{r}
+# Fit the Bayesian logistic regression model
+credit_model_2 <- stan_glm(
+  Default ~ Credit_Limit + Avg_Pay_Status ,
+  data = loan_sample,
+  family = binomial,  
+  prior_intercept = normal(0, 2.5, autoscale = TRUE),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  chains = 4,
+  iter = 5000 * 2,
+  seed = 84735
+)
+```
+
+```{r}
+# MCMC diagnostics
+      mcmc_trace(credit_model_1)
+      mcmc_dens_overlay(credit_model_1)
+      mcmc_acf(credit_model_1)
+      neff_ratio(credit_model_1)
+      rhat(credit_model_1)
+      
+      # Summary of the model
+      summary(credit_model_1)
+```
+
+All the MCMC diagnosis seem reliable with good mixing and overlapping of chains, minimal auto-correlations with good enough *n_eff* and *Rhat* values indicating reliable and stable posterior simulations according to the notes document of Week 4 on Building Simple Normal Regression models (Link: <https://canvas.slu.edu/courses/55934/files/4756996?wrap=1>).
+
+```{r}
+# summary with confidence intervals
+ tidy(credit_model_2, conf.int = TRUE, conf.level = 0.9999)
+```
+
+Looking at the coefficients again, the ***Credit_Limit*** coefficient indicates a negative relationship, suggesting that for every one unit increase in credit limit, the log(odds of default) decreases by very small amount of approximately 1.376e-06 units. The 95% confidence interval (-2.281e-06, -4.91e-07) confirms this effect, as it does not include zero, indicating statistical significance.
+
+A unit increase in ***Avg_Pay_Status*** corresponds to an good increase of approximately 1.526 in the log(odds of default). A 95% confidence interval of (1.288, 1.728), which does not straddle 0, supports this positive relationship and indicates statistical significance.
+
+Based on the confidence intervals observed, we reject the null hypothesis ($H_0$) for *Credit_Limit* and *Avg_Pay_Status* coefficients due to their confidence intervals not including zero as suggested by *Mudigonda (2024)*, indicating these variables have a statistically significant impact on the log(odds of default).
+
+### Unfolding the log(odds) Jargon
+
+For the ***Credit_Limit***, for every one unit increase in credit limit, the odds of default decrease by around 1.376e-06 units: e\^ -1.376\*10\^-6= 0.99. Similarly, for ***Avg_Pay_Status***, for every one unit increase in average payment status, the odds of default increase by around 1.526: e\^1.526= 4.65. It is clear that the average repayment status can be extremely useful in predicting the potential defaulters.
+
+## IM5: Model comparison
+
+### Simple Classification
+
+We shall compare how well these two models classify predicted outcome of default into a binary yes-or-no classification of Y (Default) with a cut-off of 50% as suggested by *(Johnson, Ott, & Dogucu, 2021)*. This cutoff represents the probability threshold above which an individual is classified as likely to default on their credit card payments.
+
+```{r}
+# Generate classification summary for model 1
+set.seed(84735)
+classification_summary(model = credit_model_1, data = loan_sample, cutoff = 0.5)
+
+# Generate classification summary for model 2
+set.seed(84735)
+classification_summary(model = credit_model_2, data = loan_sample, cutoff = 0.5)
+```
+
+Both the models produce very similar results on all 3 metrics. Overall they correctly classified 71.6% of total test cases indicated by the metric- *overall_accuracy*. Although this is close to good enough, a closer look at the results show that our model has performed very good at predicting who will not default the loan than who will default. Among the 2428 customers who did not default, we correctly classified 2227 or around 91.5% indicated by the metric- *specificity* or *true negative rate*. In contrast, we did a not so good job in predicting who will actually default as the model has classified only 637 out of 1572 or around 40.5% indicated by the metric- *sensitivity* or *true positive rate*.
+
+### Cross-validation Method
+
+That's okay! We shall modify the classification cut-off by bringing it down from 0.5 to 0.3 to suit our main goal of predicting more defaulters rather than solely focusing on overall accuracy rates. By this 0.3 cut-off, we will classify a test case as default if there is even a 30% chance of default. In order to avoid any possible bias in training and testing *credit_model_1* using the same data, we also need to apply the method of 10-fold cross-validation using *classification_summary_CV* as suggested by *(Johnson, Ott, & Dogucu, 2021).*
+
+```{r}
+set.seed(84735)
+
+# Model 1 cross-validation
+cv_accuracy_1 <- classification_summary_cv(
+  model = credit_model_1, 
+  data = loan_sample, 
+  cutoff = 0.3, 
+  k = 10  # Specify the number of folds for cross-validation
+)
+cv_accuracy_1$cv
+
+set.seed(84735)
+
+# Model 2 cross-validation
+cv_accuracy_2 <- classification_summary_cv(
+  model = credit_model_2, 
+  data = loan_sample, 
+  cutoff = 0.3, 
+  k = 10  # Specify the number of folds for cross-validation
+)
+cv_accuracy_2$cv
+
+```
+
+By making it easier to classify default, the sensitivity made a leap from 40% to 75.5% in model 1 and 74.3% in model 2. But this was achieved at the cost of making it more difficult to predict who will not default. As we can see in the results, the specificity dropped from 91% to 56% in model 1 and 60% in model 2, and so the model is more prone to classify someone as defaulter more often than usual.
+
+Thus, Model 2 outperforms Model 1 across all metrics. While both models have nearly identical sensitivity, Model 2 exhibits superior specificity and overall accuracy compared to Model 1.
+
+### Expected Log-Predictive Density (ELPD)
+
+We shall also measure the overall compatibility of new data points with their posterior predictive models with ELPD method as suggested by *(Johnson, Ott, & Dogucu, 2021)*.
+
+```{r}
+#Calculate ELPD for the models
+loo_1 <- loo(credit_model_1)
+loo_2 <- loo(credit_model_2)
+
+#Compare the ELPD for the 2 models
+loo_compare(loo_1, loo_2)
+
+```
+
+Here, the estimated ELPD for credit_model_1 is higher, but it falls within the two standard error range of credit_model_2: (-5.1 ± 2\*5.2). Hence we cannot provode enough evidence in favor of credit_model_2 through the lens of ELPD for compatibility on new data points.
+
+### Which Model is better?
+
+Overall, despite Model 2 not having the highest ELPD, cross-validation consistently favored it across all metrics. This suggests that while Model 1 includes a broader set of 7 features, Model 2's simplicity with just two key predictors (*Credit_Limit* and *Avg_Pay_Status*) performs remarkably well in predicting defaulters. Therefore, Model 2 demonstrates superiority over Model 1 by maintaining simplicity while achieving similar predictive accuracy as suggested by *(Johnson, Ott, & Dogucu, 2021)*, sensitivity, and specificity, thereby enhancing implementation and interpretability.
+
+# Conclusions
+
+## C1: Addressing Initial Research Questions
+
+1.  What are the key features that significantly predict whether a client will default on their credit card payments?
+
+    Recalling from the section of Hypothesis Checking (IM3), repayment status (*Avg_Repay_Status*) and *Credit_Limit* are the two features that stood out as significant and were used to build Model 2 in predicting the loan defaulters.
+
+2.  In predicting credit card default rates, which category---demographic factors or past payment behaviors---provides more significant insights or predictive power?
+
+    Regarding the prediction of credit card default rates, the tidy summaries from Model 2 (IM4) illustrate that both Credit_Limit and Avg_Pay_Status are significant predictors. Notably, Avg_Pay_Status exhibits a larger coefficient (1.52), suggesting it holds greater predictive power compared to Credit_Limit, which has a much smaller coefficient (-1.344e-06). This was also proved by the calculating the odds of these coefficients in that section impying that average repayment status being more useful than credit limit in predicting defaults.
+
+## C2: Limitations
+
+Few key limitations are,
+
+-   Bayesian methods shine when prior beliefs or knowledge can be effectively integrated, enhancing model robustness and interpretation. With a large dataset (4k rows) and weakly informative priors, the posterior tends to be driven more by the data itself rather than the priors, potentially reducing the distinct advantages of Bayesian inference compared to less computationally intensive frequentist approaches. Therefore, although I am not sure, for my analysis, the computational resources required for Bayesian analysis might not yield substantial additional insights compared to more straightforward methods.
+
+-   The documentation of this dataset is not sufficient enough in understanding some of the classes of variables along with unspecified encoding. This created ambiguity on few of the classes of variables. So, I had to make quite a number of assumptions on those ambiguous classes of variables. Therefore, the data quality, completeness, and accuracy may affect the robustness of conclusion drawn.
+
+-   Possible multicollinearity between features was overlooked.
+
+-   The findings and models developed may be specific to the dataset and conditions of the study (e.g., Taiwanese credit card defaults in 2005). Generalizing to other demographics or time periods requires careful validation and possibly adaptation of models.
+
+## C3: Additional Research Questions
+
+1.  **Research Question 1:** How do economic factors, such as GDP growth rates or unemployment levels, interact with demographic and repayment behavior variables to influence credit card default rates?
+
+    **Approach for Data Collection:** Economic data can be collected periodically from government reports, central banks, and economic research institutions.
+
+2.  **Research Question 2:** How does salary, behavioral factors, such as spending habits, savings rates, or financial literacy, contribute to predicting credit card default rates when combined with demographic and repayment variables?
+
+    **Approach for Data Collection:** By conducting surveys or utilize transactional data (with appropriate consent and privacy measures) to gather behavioral insights from credit card users.
+
+## C4: Potential Implications
+
+-   The conversion of unknown classes (e.g., converting -2 and 0 to 0) holding a good number of variables in it into already known categories was performed extensively. This preprocessing step, while necessary for analysis, potentially introduced biases or inaccuracies in the model predictions.
+
+-   With the prime goal of predicting more potential defaulters, prioritizing sensitivity over specificity in the model design might lead to identifying more true positives (default cases), but, on the other hand, it could inadvertently reject genuine loan applicants who do not fit typical risk profiles.
+
+-   The significant class imbalances present in the dataset may introduce bias towards the majority class, potentially leading to skewed predictions and decision-making processes that favor certain groups over others like gender bias.
+
+# Reflections
+
+## R1& R2: Addressing my Challenges
+
+Selecting the right dataset presented an initial challenge due to the vast array of options available. I found myself caught in an exhaustive search for the 'perfect' dataset that aligns with my interests. However, I've come to realize that during the learning phase, it's not just about finding the best possible dataset initially, but it's more about making optimal choices within a given timeframe and continuously experimenting and learning from multiple datasets to improve my skills.
+
+Defining research questions became clearer once I selected the dataset for classifying loan defaulters. However, conducting extensive Exploratory Data Analysis (EDA) for the first time was challenging. I went through multiple Kaggle notebooks on this dataset to understand the EDA process. Additionally, selecting and engineering features, particularly aggregating past payment behaviors across multiple months, posed significant challenges. As there is no definitive line to mark a dataset as 'fit' for model building, the decision of making features ready while maintaining simplicity and relevancy is quite a challenge, which I am learning through experience. Documentation also takes a whole lot time everytime which always wonders me how it just happens unknowingly.\
+\
+Two psychological behaviors I am more concerned to work upon: Aiming for Perfection everytime, and obsession of making first step itself right/correct without realizing that it is not possible in the law of the nature.
+
+# References
+
+Graff, V. (2023, April 20). Dimension Reduction: Facing the Curse of Dimensionality. Medium. <https://towardsdatascience.com/dimension-reduction-facing-the-curse-of-dimensionality-63a743e4b199>
+
+How can you balance class imbalance in an ML model? (2023, September 12). <https://www.linkedin.com/advice/1/how-can-you-balance-class-imbalance-ml-model>
+
+Johnson, A. A., Ott, M. Q., & Dogucu, M. (2021). *Bayes Rules! An Introduction to Applied Bayesian Modeling.* <https://www.bayesrulesbook.com/>
+
+Mudigonda, S. (2024). *Video lecture on Multivariate Normal Models.* Saint Louis University.\
+<https://canvas.slu.edu/courses/55934/pages/6-dot-3-%7C-learning-materials?module_item_id=1667250>
+
+Notes document of Week 4 on Building Simple Normal Regression models: <https://canvas.slu.edu/courses/55934/files/4756996?wrap=1>
+
+Stan-Dev. (n.d.). *Prior Choice Recommendations*. GitHub. <https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations>
+
+*The Taiwan Credit Card Crisis - Financial Ethics*. (2011, October 5). Seven Pillars Institute. <https://sevenpillarsinstitute.org/case-studies/taiwans-credit-card-crisis/>
+
+*UCI Machine Learning Repository*. (n.d.). <https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients>
