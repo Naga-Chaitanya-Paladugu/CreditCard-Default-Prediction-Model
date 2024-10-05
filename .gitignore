@@ -45,4 +45,5 @@ __pycache__/
 
 
 # Pycharm
-.idea
+.idea/*
+.idea/
