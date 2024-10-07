@@ -1,8 +1,8 @@
-_URL for detailed version:_https://naga-chaitanya-paladugu.github.io/Taiwan-Credit-Default/
-
 # Prediction of Loan Defaults
 
-### This is my first Machine Learning project. I have gone through many reiterations and crossroads of making judgment calls at many steps during the project! Overall, enjoyed the learning.
+### This is my first Machine Learning project. I have gone through many reiterations and crossroads of making judgment calls at many steps during the project! Overall, enjoyed the learning. Here is the link to detailed version of this project: https://naga-chaitanya-paladugu.github.io/Taiwan-Credit-Default/.
+
+### Below is the preview and summary of project's main details.
 ## Project Overview
 This project aims to predict credit card loan defaults using a dataset from the UCI Machine Learning Repository. The dataset includes demographic details and past payment behavior of clients from Taiwan during the 2005 financial crisis.
 
