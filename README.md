@@ -1,10 +1,8 @@
 # Prediction of Loan Defaults
-## Personal Note
-This is my first Machine Learning project, developed from learning the Bayesian way of predictive modeling in my fully online degree coursework. I have gone through many reiterations and crossroads of making judgment calls at various steps during the project. Overall, I enjoyed the learning process and will improvise on my next project utilizing the lessons learned. 
 
-Here is the **link to full detailed report** of this project: https://naga-chaitanya-paladugu.github.io/Taiwan-Credit-Default/.
+### This is my first Machine Learning project. I have gone through many reiterations and crossroads of making judgment calls at many steps during the project! Overall, enjoyed the learning. Here is the link to detailed version of this project: https://naga-chaitanya-paladugu.github.io/Taiwan-Credit-Default/.
 
-Below is a **quick summary** of project's main details.
+### Below is the preview and summary of project's main details.
 ## Project Overview
 This project aims to predict credit card loan defaults using a dataset from the UCI Machine Learning Repository. The dataset includes demographic details and past payment behavior of clients from Taiwan during the 2005 financial crisis.
 
@@ -74,4 +72,9 @@ To predict whether a customer will default on their loan repayment for the month
 ## Future Work
 - Explore the impact of economic factors on default rates
 - Incorporate behavioral data such as spending habits and financial literacy
+
+## References
+- Graff, V. (2023). Dimension Reduction: Facing the Curse of Dimensionality. Medium.
+- Johnson, Ott, & Dogucu (2021). Bayes Rules! An Introduction to Applied Bayesian Modeling.
+- Mudigonda, S. (2024). Video lecture on Multivariate Normal Models. Saint Louis University.
 
