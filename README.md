@@ -1,6 +1,8 @@
 # Prediction of Loan Defaults
 
-### This is my first Machine Learning project. I have gone through many reiterations and crossroads of making judgment calls at many steps during the project! Overall, enjoyed the learning. Here is the link to detailed version of this project: https://naga-chaitanya-paladugu.github.io/Taiwan-Credit-Default/.
+### This is my first Machine Learning project. I have gone through many crossroads of making judgment calls at many steps and reiterations during the project! Overall, I enjoyed the learning and identified that I need to level up by learning more models that can fit better to the dataset at hand and also learn hyperparameter tuning to optimize the models and many more. 
+
+Here is the link to full detailed version of this project: https://naga-chaitanya-paladugu.github.io/Taiwan-Credit-Default/.
 
 ### Below is the preview and summary of project's main details.
 ## Project Overview
