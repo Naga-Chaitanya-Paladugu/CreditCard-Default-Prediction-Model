@@ -75,8 +75,3 @@ To predict whether a customer will default on their loan repayment for the month
 - Explore the impact of economic factors on default rates
 - Incorporate behavioral data such as spending habits and financial literacy
 
-## References
-- Graff, V. (2023). Dimension Reduction: Facing the Curse of Dimensionality. Medium.
-- Johnson, Ott, & Dogucu (2021). Bayes Rules! An Introduction to Applied Bayesian Modeling.
-- Mudigonda, S. (2024). Video lecture on Multivariate Normal Models. Saint Louis University.
-
