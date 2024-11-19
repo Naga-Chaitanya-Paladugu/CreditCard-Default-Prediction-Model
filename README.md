@@ -3,7 +3,7 @@
 ## Personal Note
 This is my first Machine Learning project, developed from learning the Bayesian way of predictive modeling in my fully online degree coursework. I have gone through many reiterations and crossroads of making judgment calls at various steps during the project. Overall, I enjoyed the learning process and will improvise on my next project utilizing the lessons learned.
 
-Here is the l**ink to full detailed report** of this project: https://naga-chaitanya-paladugu.github.io/Taiwan-Credit-Default/.
+Here is the l**ink to full detailed report** of this project: https://naga-chaitanya-paladugu.github.io/CreditCard-Default-Prediction-Model/.
 
 Below is a **quick summary** of project's main details.
 ## Project Overview
